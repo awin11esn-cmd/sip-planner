@@ -1,0 +1,508 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>GOD_OF_MF SIP Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: single column passbook — status strip, then working panels: funds, rebalance, after-cost Calmar, strategy league, new funds, projection, setup */
+:root{
+  --bg:#f3f4f1; --surface:#fbfbf9; --ink:#15181a; --ink-2:#4d5357; --muted:#868c8f;
+  --line:#dcdfdb; --accent:#1f4e79; --accent-ink:#ffffff; --hl:#e7eef5;
+  --mom:#d9622b; --val:#16956a; --sc:#c85a8a;
+  --good:#1d7a3a; --warn:#b26a00; --bad:#c23b3b;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111416; --surface:#1a1e21; --ink:#eef0f0; --ink-2:#b9bfc2; --muted:#7f878b;
+    --line:#2b3135; --accent:#7fb2e5; --accent-ink:#0d1a26; --hl:#1c2a37;
+    --mom:#f07a43; --val:#2fc08c; --sc:#e27aa8;
+    --good:#4cc46f; --warn:#e3a33a; --bad:#ef6b6b; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111416; --surface:#1a1e21; --ink:#eef0f0; --ink-2:#b9bfc2; --muted:#7f878b;
+  --line:#2b3135; --accent:#7fb2e5; --accent-ink:#0d1a26; --hl:#1c2a37;
+  --mom:#f07a43; --val:#2fc08c; --sc:#e27aa8;
+  --good:#4cc46f; --warn:#e3a33a; --bad:#ef6b6b; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5;font-size:15px}
+.wrap{max-width:920px;margin:0 auto;padding-block:36px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+header{display:grid;gap:10px}
+.kicker{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.live{display:inline-flex;align-items:center;gap:6px;color:var(--good)}
+.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--good)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,6vw,46px);line-height:1.05;margin:0;letter-spacing:-.02em;text-wrap:balance}
+h1 .ratio{color:var(--accent)}
+.lede{color:var(--ink-2);max-width:64ch;margin:0}
+.bar{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px}
+.bar span{display:block;height:100%}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.fact{padding:14px 16px;display:grid;gap:2px;border-left:1px solid var(--line);min-width:0}
+.fact:first-child{border-left:none}
+.fact b{font-family:var(--f-display);font-size:24px;font-weight:700;letter-spacing:-.01em}
+.fact small{font-size:12px;color:var(--muted)}
+.fact .lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+section.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px clamp(16px,3vw,26px);display:grid;gap:16px;min-width:0}
+h2{font-family:var(--f-display);font-weight:700;font-size:21px;margin:0;letter-spacing:-.01em}
+h3{font-family:var(--f-display);font-weight:700;font-size:16px;margin:0}
+.note{color:var(--ink-2);font-size:13.5px;margin:0;max-width:68ch}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:end}
+label.field,.field{display:grid;gap:5px;font-size:12px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.04em;text-transform:uppercase}
+.inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--bg);overflow:hidden}
+.inp:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.inp i{font-style:normal;padding:0 0 0 10px;color:var(--muted);font-family:var(--f-mono)}
+.inp i.suf{padding:0 10px 0 0}
+input[type=number]{border:0;background:transparent;color:var(--ink);font:500 16px var(--f-mono);padding:9px 10px;width:8.5em;font-variant-numeric:tabular-nums}
+input[type=number].sm{width:4.2em}
+input:focus{outline:none}
+input[type=range]{accent-color:var(--accent);width:100%}
+select{font:500 13.5px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px;max-width:100%}
+select:focus-visible{outline:2px solid var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 13px var(--f-mono);padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink-2);cursor:pointer}
+.chip:hover{border-color:var(--muted)}
+.chip:focus-visible,.btn:focus-visible,th button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.warnline{font-size:13px;color:var(--bad);font-family:var(--f-mono)}
+.slots{display:grid;gap:12px}
+.slot{display:grid;grid-template-columns:6px minmax(0,1fr);gap:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.slot .sw{border-radius:3px}
+.slot .body{display:grid;gap:10px;min-width:0}
+.slot .top{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:space-between;align-items:center}
+.slot .top .lbl{font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.slot .amt{font:600 20px var(--f-mono);font-variant-numeric:tabular-nums}
+.slot .amt small{font:12px var(--f-mono);color:var(--muted);margin-left:6px}
+.kv{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.kv div{display:grid;gap:1px;min-width:0}
+.kv small{font:10.5px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kv b{font:500 14.5px var(--f-mono);font-variant-numeric:tabular-nums}
+.badge{font:500 11px var(--f-mono);padding:2px 8px;border-radius:999px;border:1px solid var(--good);color:var(--good);white-space:nowrap}
+.badge.dim{border-color:var(--line);color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:11px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px}
+th,td{padding:9px 11px;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--bg);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;font-family:var(--f-body)}
+th button{all:unset;cursor:pointer}
+th button[aria-sort]::after{content:" ▾"}
+td small{display:block;font:12px var(--f-body);color:var(--muted)}
+td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px}
+td input[type=number]{width:7.5em;text-align:right;border:1px solid var(--line);border-radius:7px;background:var(--bg);padding:6px 8px;font-size:14px}
+td input[type=number]:focus{outline:2px solid var(--accent)}
+tr.hl td{background:var(--hl)}
+tr.port td:first-child{font-weight:600}
+.pill{display:inline-block;font:500 11.5px var(--f-mono);padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--good)} .pill.mid{color:var(--warn)} .pill.hi{color:var(--bad)}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.callout{border-left:3px solid var(--accent);padding:10px 14px;background:var(--bg);border-radius:0 9px 9px 0;font-size:14px}
+.callout b{font-family:var(--f-mono)}
+.proj{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:20px;align-items:start}
+.sliders{display:grid;gap:16px}
+.sl{display:grid;gap:4px}
+.sl .top{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-2)}
+.sl .top b{font-family:var(--f-mono);color:var(--ink)}
+.out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.out div{background:var(--bg);padding:11px 12px;display:grid;gap:2px}
+.out small{font:10.5px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.out b{font:600 16.5px var(--f-mono);font-variant-numeric:tabular-nums}
+svg{width:100%;height:auto;display:block}
+svg text{fill:var(--muted);font:10.5px var(--f-mono)}
+ol.steps{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start}
+ol.steps li::before{content:counter(s);font:600 12px var(--f-mono);width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--ink-2)}
+ol.steps li span{padding-top:2px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:11px;padding:14px;background:var(--bg);display:grid;gap:6px;align-content:start;min-width:0}
+.card p,.card ul{margin:0;font-size:13.5px;color:var(--ink-2)}
+.card ul{padding-left:18px;display:grid;gap:3px}
+.tag{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--good)}
+.tag.no{color:var(--muted)} .tag.warn{color:var(--warn)}
+.pairs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.pair{border:1px solid var(--line);border-radius:11px;padding:14px;background:var(--bg);display:grid;gap:8px;align-content:start;min-width:0}
+.pair .nm{font-weight:600;font-size:14px}
+.pair .big{font:600 24px var(--f-mono);font-variant-numeric:tabular-nums}
+.meter{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.meter span{display:block;height:100%;border-radius:4px}
+.pair small{color:var(--muted);font-size:12px}
+.pair details summary{cursor:pointer;font-size:12.5px;color:var(--ink-2)}
+.stk{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.stk span{font:11px var(--f-mono);padding:2px 6px;border-radius:5px;border:1px solid var(--line);background:var(--surface)}
+table.heat{min-width:640px}
+table.heat td,table.heat th{text-align:center;padding:8px 6px}
+table.heat th:first-child,table.heat td:first-child{text-align:left}
+table.heat td.self{color:var(--muted)}
+table.heat .mine{outline:2px solid var(--accent);outline-offset:-2px}
+table.heat td.ov{color:var(--ink-2);font-size:12.5px}
+@media (max-width:680px){.pairs{grid-template-columns:minmax(0,1fr)}}
+footer{color:var(--muted);font-size:12.5px;max-width:72ch;display:grid;gap:6px}
+.btn{font:500 13px var(--f-mono);padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink-2);cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+@media (max-width:680px){
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fact:nth-child(3){border-left:none}
+  .fact:nth-child(n+3){border-top:1px solid var(--line)}
+  .proj,.cards{grid-template-columns:minmax(0,1fr)}
+  .kv{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:no-preference){.bar span{transition:all .25s ease}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kicker"><span>Factor SIP · Direct plans on Fyers</span><span class="live" id="updLabel"></span></div>
+    <h1>GOD_OF_MF <span class="ratio" id="ratioTitle">60 · 30 · 10</span></h1>
+    <p class="lede">Your 60/30/10 SIP across three index funds: this month's split, live fund prices, how far your holdings have drifted, and your own XIRR. All returns shown are after fund costs.</p>
+    <div class="bar" id="topBar" aria-hidden="true"></div>
+    <div class="facts">
+      <div class="fact"><span class="lbl">CAGR after costs</span><b class="num" id="fNet"></b><small id="fNetSub">daily backtest 2009 – Oct 2026</small></div>
+      <div class="fact"><span class="lbl">Max drawdown</span><b class="num" id="fDD"></b><small>worst peak-to-trough</small></div>
+      <div class="fact"><span class="lbl">Calmar after costs</span><b class="num" id="fCal"></b><small>net CAGR ÷ drawdown</small></div>
+      <div class="fact"><span class="lbl">Yearly cost</span><b class="num" id="fCost"></b><small>weighted, chosen funds</small></div>
+    </div>
+  </header>
+
+  <section class="panel" aria-labelledby="h-split">
+    <h2 id="h-split">Your funds and this month's SIP</h2>
+    <div class="row">
+      <label class="field" for="sip">Monthly amount
+        <span class="inp"><i>₹</i><input type="number" id="sip" min="0" step="500" value="10000"></span>
+      </label>
+      <div class="field">Target mix<div class="chips" id="presets"></div></div>
+    </div>
+    <div class="row">
+      <label class="field" for="w0"><span id="wl0">Momentum</span><span class="inp"><input class="sm" type="number" id="w0" min="0" max="100" step="5"><i class="suf">%</i></span></label>
+      <label class="field" for="w1"><span id="wl1">Value</span><span class="inp"><input class="sm" type="number" id="w1" min="0" max="100" step="5"><i class="suf">%</i></span></label>
+      <label class="field" for="w2"><span id="wl2">Small/Mid MQ</span><span class="inp"><input class="sm" type="number" id="w2" min="0" max="100" step="5"><i class="suf">%</i></span></label>
+      <span class="warnline" id="sumWarn" hidden></span>
+    </div>
+    <div class="slots" id="slots"></div>
+    <p class="note">NAV and 1-year return are the fund's own figures, so costs are already taken out. "Cost" is the all-in expense ratio. Check each fund's minimum SIP in the Fyers app.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-reb">
+    <h2 id="h-reb">Drift and rebalancing</h2>
+    <div class="callout"><b>Rebalancing rule:</b> never sell. Once a year in January, enter your holdings below. If any fund is more than 5 points away from its target, use the "Next SIP split" column for your SIPs until it's back within 5 points. Otherwise keep the normal 60/30/10 split.</div>
+    <p class="note">Enter today's value of each fund from your Fyers holdings. The figures start as an example.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Slot</th><th>Current value</th><th>Weight now</th><th>Target</th><th>Drift</th><th>Next SIP split</th><th>Full rebalance</th></tr></thead>
+        <tbody id="rebBody"></tbody>
+      </table>
+    </div>
+    <div class="callout" id="rebCallout"></div>
+    <div class="row"><button class="btn" id="resetHold" type="button">Reset to example values</button></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-my">
+    <h2 id="h-my">Your XIRR</h2>
+    <p class="note">Enter when your SIP started and the units you hold in each fund (from Fyers → Holdings). Value is units × the latest NAV, so this updates every weekday evening with the page. Leave units at 0 to use the current value from the drift table instead.</p>
+    <div class="row">
+      <label class="field" for="xStart">First SIP month<span class="inp"><input type="month" id="xStart" style="border:0;background:transparent;color:var(--ink);font:500 15px var(--f-mono);padding:8px 10px"></span></label>
+      <label class="field" for="xDay">SIP date<span class="inp"><input class="sm" type="number" id="xDay" min="1" max="28" step="1"><i class="suf">th</i></span></label>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Slot · fund</th><th>Monthly SIP</th><th>Units held</th><th>Invested</th><th>Value now</th><th>Gain</th><th>XIRR</th></tr></thead>
+        <tbody id="myBody"></tbody>
+      </table>
+    </div>
+    <div class="callout" id="myCallout"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-bx">
+    <h2 id="h-bx">SIP XIRR, backtested after costs</h2>
+    <p class="note">A fixed monthly SIP started at the beginning of each window and valued on <span id="bxEnd"></span>, using daily NSE total-return data with each fund's yearly cost taken off and yearly rebalancing.</p>
+    <div class="tbl">
+      <table>
+        <thead id="bxHead"></thead>
+        <tbody id="bxBody"></tbody>
+      </table>
+    </div>
+    <div class="callout">The last three years were a weak patch for momentum and value 20, so recent SIPs show low XIRR. That's the normal pattern for these strategies: long flat or down stretches, then sharp catch-up runs. The 17-year figure is the one that reflects a full cycle.</div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-co">
+    <h2 id="h-co">How your three funds move together</h2>
+    <p class="note">Return correlation from weekly NSE total-return data, Jan 2009 – Oct 2026 (1 = move in lockstep, 0 = unrelated). Crash weeks are the <span id="coN"></span> weeks when the Nifty 500 fell more than 2%; that's when diversification matters. Shared stocks come from NSE's current constituent lists.</p>
+    <div class="callout"><b>When the stock lists change</b> (NSE Index Reconstitution Calendar): every momentum, momentum-quality and Nifty500 Low Volatility index on this page rebalances twice a year, on the last working day of <b>June</b> and <b>December</b>. Nifty100 Low Volatility 30 is quarterly (March, June, September, December). Nifty50 Value 20 changes once a year, in December. NSE announces the new lists about four weeks before. Next change for all of them: <b>31 Dec 2026</b>. Shared-stock counts here were last updated <b id="coUpd">14 Oct 2026</b>.</div>
+    <div class="chips" id="coMode"></div>
+    <div class="facts" id="coFacts"></div>
+    <div class="pairs" id="coPairs"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-proj">
+    <h2 id="h-proj">Where the SIP could get to</h2>
+    <p class="note">A projection at a steady return you choose. The backtest earned about 20% XIRR on a flat SIP, during an unusually strong period for momentum, so plan around a lower number.</p>
+    <div class="proj">
+      <div class="sliders">
+        <div class="sl"><div class="top"><span>Years</span><b id="yrsV"></b></div><input type="range" id="yrs" min="3" max="30" value="15" aria-label="Years"></div>
+        <div class="sl"><div class="top"><span>Assumed return after costs</span><b id="retV"></b></div><input type="range" id="ret" min="6" max="22" step="0.5" value="13" aria-label="Assumed return"></div>
+        <div class="sl"><div class="top"><span>Yearly SIP step-up</span><b id="stepV"></b></div><input type="range" id="step" min="0" max="20" value="5" aria-label="Step-up"></div>
+        <div class="out">
+          <div><small>Invested</small><b id="oInv"></b></div>
+          <div><small>Value</small><b id="oVal"></b></div>
+          <div><small>Multiple</small><b id="oMul"></b></div>
+        </div>
+      </div>
+      <div><svg id="chart" viewBox="0 0 520 260" role="img" aria-label="Projected value versus amount invested"></svg></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-fy">
+    <h2 id="h-fy">Mutual fund, not ETF, on Fyers</h2>
+    <p class="note">Fyers sells direct mutual funds with zero commission and automatic SIPs. ETFs cost ₹20 or 0.3% brokerage plus GST on every monthly buy and ₹12.5 + GST per scrip when you sell, and factor ETFs trade thinly.</p>
+    <ol class="steps">
+      <li><span>Open <b>Mutual Funds</b> in the Fyers app and search each fund chosen above. Pick <b>Direct – Growth</b>.</span></li>
+      <li><span>Start a monthly SIP for each with the amount shown, all on the same date, and set up the bank autopay once.</span></li>
+      <li><span>Each January, enter your holdings in <b>Drift and rebalancing</b>. If drift is over 5 points, use the "Next SIP split" for a few months instead of selling.</span></li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>Fund NAVs, costs and 1-year returns come from public fund listings and refresh once each weekday evening; check the Fyers app for the figure you transact at. Index data: NSE Indices (Index Dashboard, factsheets, total-return series). Backtests assume annual rebalancing, no taxes. This is a planning tool, not investment advice.</span>
+  </footer>
+</div>
+
+<script type="application/json" id="live-data">{"updated": "2026-10-28", "funds": {"kotak_mom50": {"name": "Kotak Nifty Midcap 150 Momentum 50 Index Fund", "amc": "Kotak Mahindra MF", "slot": "mom", "idx": "Nifty Midcap150 Momentum 50", "cost": 0.7315, "aum": 446.51, "nav": 8.89, "navDate": "2026-10-27", "r1": -5.13, "src": "https://www.torusdigital.com/mutual-funds/kotak-nifty-midcap-150-momentum-50-index-fund-direct-growth"}, "tata_mom50": {"name": "Tata Nifty Midcap 150 Momentum 50 Index Fund", "amc": "Tata MF", "slot": "mom", "idx": "Nifty Midcap150 Momentum 50", "cost": 0.82, "aum": 1205.59, "nav": 17.03, "navDate": "2026-10-26", "r1": -6.1, "src": "https://www.torusdigital.com/mutual-funds/tata-nifty-midcap-150-momentum-50-index-fund-direct-growth"}, "edel_mom50": {"name": "Edelweiss Nifty Midcap150 Momentum 50 Index Fund", "amc": "Edelweiss MF", "slot": "mom", "idx": "Nifty Midcap150 Momentum 50", "cost": 0.84, "aum": 1728.39, "nav": 16.78, "navDate": "2026-10-23", "r1": -8.08, "src": "https://www.torusdigital.com/mutual-funds/edelweiss-nifty-midcap150-momentum-50-index-fund-direct-growth"}, "nippon_v20": {"name": "Nippon India Nifty 50 Value 20 Index Fund", "amc": "Nippon India MF", "slot": "val", "idx": "Nifty50 Value 20", "cost": 0.51, "aum": 707.93, "nav": 16.83, "navDate": "2026-10-23", "r1": -13.09, "src": "https://www.torusdigital.com/mutual-funds/nippon-india-nifty-50-value-20-index-fund-direct-growth"}, "axis_v50": {"name": "Axis Nifty500 Value 50 Index Fund", "amc": "Axis MF", "slot": "val", "idx": "Nifty500 Value 50", "cost": 0.41, "aum": 233.67, "nav": 10.37, "navDate": "2026-10-23", "r1": -0.49, "src": "https://www.torusdigital.com/mutual-funds/axis-nifty500-value-50-index-fund-direct-growth"}, "uti_v50": {"name": "UTI Nifty 500 Value 50 Index Fund", "amc": "UTI MF", "slot": "val", "idx": "Nifty500 Value 50", "cost": 0.75, "aum": 838.01, "nav": 20.33, "navDate": "2026-10-26", "r1": -0.08, "src": "https://www.torusdigital.com/mutual-funds/uti-nifty-500-value-50-index-fund-direct-growth"}, "icici_v30": {"name": "ICICI Prudential Nifty200 Value 30 Index Fund", "amc": "ICICI Prudential MF", "slot": "val", "idx": "Nifty200 Value 30", "cost": 0.61, "aum": 187.92, "nav": 10.06, "navDate": "2026-10-23", "r1": 0.45, "src": "https://www.torusdigital.com/mutual-funds/icici-pru-nifty200-value-30-index-fund-direct-growth"}, "mirae_sc250": {"name": "Mirae Asset Nifty Smallcap 250 Momentum Quality 100 ETF FoF", "amc": "Mirae Asset MF", "slot": "sc", "idx": "Nifty Smallcap250 Momentum Quality 100", "cost": 0.8, "aum": 251, "nav": 10.22, "navDate": "2026-10-27", "r1": 0.03, "src": "https://indmoney.com/mutual-funds/fund/mirae-asset-nifty-smallcap-250-momentum-quality-100-etf-fof-dir-growth/1044995", "costNote": "all-in: 0.07% FoF fee + ~0.73% underlying ETF"}, "groww_sc250": {"name": "Groww Nifty Smallcap 250 Momentum Quality 100 Index Fund", "amc": "Groww MF", "slot": "sc", "idx": "Nifty Smallcap250 Momentum Quality 100", "cost": 0.47, "aum": 9, "nav": 10.05, "navDate": "2026-10-27", "r1": null, "src": "https://www.indmoney.com/mutual-funds/groww-nifty-smallcap-250-momentum-quality-100-index-fund-direct-growth"}, "uti_ms400": {"name": "UTI Nifty Midsmallcap 400 Momentum Quality 100 Index Fund", "amc": "UTI MF", "slot": "sc", "idx": "Nifty MidSmallcap400 Momentum Quality 100", "cost": 0.93, "aum": 130, "nav": 11.08, "navDate": "2026-10-21", "r1": -0.44, "src": "https://www.indmoney.com/mutual-funds/fund/uti-nifty-midsmallcap-400-momentum-quality-100-index-fund-direct-growth/1049603"}, "icici_v20": {"name": "ICICI Prudential Nifty50 Value 20 Index Fund", "amc": "ICICI Prudential MF", "slot": "val", "idx": "Nifty50 Value 20", "cost": 0.52, "aum": 95, "nav": 9.64, "navDate": "2026-10-27", "r1": -13.3, "src": "https://indmoney.com/mutual-funds/fund/icici-prudential-nifty50-value-20-index-fund-direct-growth/1044776"}}}</script>
+<script>
+const LIVE=JSON.parse(document.getElementById('live-data').textContent);
+const LEAGUE=[{"name": "Nifty500 Value 50", "r1": 6.89, "r3": 20.13, "r5": 22.26, "vol": 16.07, "score": 1.39, "fund": "Axis Nifty500 Value 50 Index Fund", "amc": "Axis", "cost": 0.41, "aum": 234, "note": "", "r5net": 21.85, "scorenet": 1.36}, {"name": "Nifty200 Value 30", "r1": 7.89, "r3": 21.22, "r5": 22.91, "vol": 16.83, "score": 1.36, "fund": "ICICI Pru Nifty200 Value 30 Index Fund", "amc": "ICICI Prudential", "cost": 0.61, "aum": 188, "note": "", "r5net": 22.3, "scorenet": 1.33}, {"name": "Nifty Alpha Quality Value Low-Volatility 30", "r1": -6.17, "r3": 12.01, "r5": 12.9, "vol": 11.79, "score": 1.09}, {"name": "Nifty500 Low Volatility 50", "r1": -3.52, "r3": 12.2, "r5": 11.51, "vol": 11.77, "score": 0.98, "fund": "Nippon India Nifty 500 Low Volatility 50 Index Fund", "amc": "Nippon India", "cost": 0.63, "aum": 27, "note": "very small fund", "r5net": 10.88, "scorenet": 0.92}, {"name": "Nifty500 Multifactor MQVLv 50", "r1": -5.04, "r3": 11.41, "r5": 12.07, "vol": 14.31, "score": 0.84, "fund": null, "amc": null, "cost": null, "aum": null, "note": "Only in insurance ULIPs (HDFC Life, Tata AIA, Bajaj Allianz Life), no mutual fund yet"}, {"name": "Nifty Midcap150 Momentum 50", "r1": 4.08, "r3": 13.54, "r5": 15.13, "vol": 18.32, "score": 0.83, "fund": "Kotak Nifty Midcap 150 Momentum 50 Index Fund", "amc": "Kotak", "cost": 0.73, "aum": 447, "note": "", "r5net": 14.4, "scorenet": 0.79}, {"name": "Nifty500 Equal Weight", "r1": 2.25, "r3": 12.51, "r5": 13.1, "vol": 16.22, "score": 0.81}, {"name": "Nifty50 Equal Weight", "r1": -1.08, "r3": 10.61, "r5": 10.71, "vol": 13.54, "score": 0.79}, {"name": "Nifty500 Growth 50", "r1": 9.42, "r3": 18.26, "r5": 15.89, "vol": 20.88, "score": 0.76}, {"name": "Nifty Dividend Opportunities 50", "r1": -5.71, "r3": 8.17, "r5": 10.19, "vol": 13.39, "score": 0.76}, {"name": "Nifty Alpha Quality Low-Volatility 30", "r1": -1.58, "r3": 11.21, "r5": 9.41, "vol": 12.58, "score": 0.75}, {"name": "Nifty MidSmallcap400 Momentum Quality 100", "r1": 6.92, "r3": 12.31, "r5": 12.87, "vol": 17.23, "score": 0.75, "fund": "UTI Nifty Midsmallcap 400 MomQual 100 Index Fund", "amc": "UTI", "cost": 0.93, "aum": 130, "note": "Mirae ETF FoF also available (₹280 Cr)", "r5net": 11.94, "scorenet": 0.69}, {"name": "Nifty100 Equal Weight", "r1": 1.08, "r3": 13.36, "r5": 10.7, "vol": 15.12, "score": 0.71}, {"name": "Nifty200 Alpha 30", "r1": 6.01, "r3": 13.92, "r5": 13.62, "vol": 19.17, "score": 0.71}, {"name": "Nifty High Beta 50", "r1": 14.12, "r3": 13.8, "r5": 15.57, "vol": 22.06, "score": 0.71}, {"name": "Nifty Smallcap250 Quality 50", "r1": -4.12, "r3": 8.93, "r5": 11.71, "vol": 16.57, "score": 0.71}, {"name": "Nifty Low Volatility 50", "r1": -4.96, "r3": 9.01, "r5": 8.3, "vol": 11.98, "score": 0.69}, {"name": "Nifty100 Low Volatility 30", "r1": -4.68, "r3": 8.99, "r5": 8.12, "vol": 12.18, "score": 0.67, "fund": "Kotak Nifty 100 Low Volatility 30 Index Fund", "amc": "Kotak", "cost": 0.39, "aum": 114, "note": "", "r5net": 7.73, "scorenet": 0.63}, {"name": "Nifty500 Momentum 50", "r1": 5.08, "r3": 11.39, "r5": 12.38, "vol": 18.74, "score": 0.66, "fund": "Nippon India Nifty 500 Momentum 50 Index Fund", "amc": "Nippon India", "cost": 0.76, "aum": 1277, "note": "", "r5net": 11.62, "scorenet": 0.62}, {"name": "Nifty Smallcap250 Momentum Quality 100", "r1": 8.42, "r3": 10.54, "r5": 11.87, "vol": 17.94, "score": 0.66, "fund": "Mirae Asset Nifty SC250 MomQual 100 ETF FoF", "amc": "Mirae Asset", "cost": 0.8, "aum": 251, "note": "0.07% FoF + 0.73% ETF", "r5net": 11.07, "scorenet": 0.62}, {"name": "Nifty Alpha Low-Volatility 30", "r1": -1.91, "r3": 9.32, "r5": 8.57, "vol": 13.24, "score": 0.65, "fund": "Nippon India Nifty Alpha Low Volatility 30 Index Fund", "amc": "Nippon India", "cost": 0.63, "aum": 1169, "note": "", "r5net": 7.94, "scorenet": 0.6}, {"name": "Nifty Alpha 50", "r1": 11.44, "r3": 14.63, "r5": 12.03, "vol": 19.23, "score": 0.63, "fund": "Bandhan Nifty Alpha 50 Index Fund", "amc": "Bandhan", "cost": 0.76, "aum": 582, "note": "", "r5net": 11.27, "scorenet": 0.59}, {"name": "Nifty500 Quality 50", "r1": -1.14, "r3": 11.29, "r5": 9.77, "vol": 15.79, "score": 0.62}, {"name": "Nifty Total Market Momentum Quality 50", "r1": 2.8, "r3": 11.53, "r5": 10.57, "vol": 17.49, "score": 0.6, "fund": "Angel One Nifty Total Market MomQual 50 Index Fund", "amc": "Angel One", "cost": 0.73, "aum": 36, "note": "launched Nov 2025", "r5net": 9.84, "scorenet": 0.56}, {"name": "Nifty100 Quality 30", "r1": -3.17, "r3": 7.78, "r5": 7.25, "vol": 12.75, "score": 0.57}, {"name": "Nifty500 Multicap Momentum Quality 50", "r1": -0.43, "r3": 10.32, "r5": 9.83, "vol": 17.27, "score": 0.57, "fund": "Edelweiss Nifty500 Multicap MomQual 50 Index Fund", "amc": "Edelweiss", "cost": 0.75, "aum": 602, "note": "", "r5net": 9.08, "scorenet": 0.53}, {"name": "Nifty Top 20 Equal Weight", "r1": -7.38, "r3": 5.59, "r5": 7.77, "vol": 13.89, "score": 0.56}, {"name": "Nifty50 Value 20", "r1": -9.51, "r3": 4.24, "r5": 6.2, "vol": 12.23, "score": 0.51, "fund": "Nippon India Nifty 50 Value 20 Index Fund", "amc": "Nippon India", "cost": 0.51, "aum": 708, "note": "", "r5net": 5.69, "scorenet": 0.47}, {"name": "Nifty Growth Sectors 15", "r1": -7.64, "r3": 3.99, "r5": 7.46, "vol": 14.51, "score": 0.51}, {"name": "Nifty200 Momentum 30", "r1": -0.47, "r3": 9.21, "r5": 9.28, "vol": 18.63, "score": 0.5, "fund": "UTI Nifty200 Momentum 30 Index Fund", "amc": "UTI", "cost": 0.82, "aum": 7962, "note": "", "r5net": 8.46, "scorenet": 0.45}, {"name": "Nifty Quality Low-Volatility 30", "r1": -6.38, "r3": 5.43, "r5": 5.81, "vol": 11.93, "score": 0.49}, {"name": "Nifty Top 15 Equal Weight", "r1": -11.01, "r3": 4.23, "r5": 7.0, "vol": 14.37, "score": 0.49}, {"name": "Nifty200 Quality 30", "r1": -5.42, "r3": 6.64, "r5": 6.4, "vol": 13.58, "score": 0.47, "fund": "UTI Nifty200 Quality 30 Index Fund", "amc": "UTI", "cost": 0.66, "aum": 500, "note": "", "r5net": 5.74, "scorenet": 0.42}, {"name": "Nifty100 Alpha 30", "r1": -4.42, "r3": 11.96, "r5": 7.87, "vol": 17.44, "score": 0.45}, {"name": "Nifty500 Flexicap Quality 30", "r1": -6.98, "r3": 1.88, "r5": 6.18, "vol": 14.39, "score": 0.43}, {"name": "Nifty Midcap150 Quality 50", "r1": -2.55, "r3": 7.44, "r5": 6.29, "vol": 15.45, "score": 0.41}, {"name": "Nifty Top 10 Equal Weight", "r1": -11.5, "r3": 1.37, "r5": 4.48, "vol": 13.89, "score": 0.32}];
+const STRAT={"end": "2026-10-14", "rows": [{"name": "Your plan 60/30/10", "key": "plan", "cagr": 21.69, "dd": -35, "cal": 0.62, "worst": -19.7, "worstYr": 2011, "neg": 4, "years": 17, "xirr": [19, 16.7, 9.5, 0.7]}, {"name": "Option A 40/20/40", "key": "A", "cagr": 21.6, "dd": -32.6, "cal": 0.66, "worst": -16.8, "worstYr": 2011, "neg": 4, "years": 17, "xirr": [19.1, 16.9, 11.1, 2.6], "cagr05": 19.94, "dd05": -62.6}, {"name": "Option B 40/20/40", "key": "B", "cagr": 21.44, "dd": -32.7, "cal": 0.66, "worst": -16.7, "worstYr": 2011, "neg": 4, "years": 17, "xirr": [18.7, 16, 9.6, 0.8], "cagr05": 19.76, "dd05": -62.6}, {"name": "70/30 Mom50 / Value 20", "key": "", "cagr": 21.82, "dd": -33.9, "cal": 0.64, "worst": -18.9, "worstYr": 2011, "neg": 3, "years": 17, "xirr": [19.2, 16.9, 9.6, 0.5]}, {"name": "80/20 Mom50 / Value 20", "key": "", "cagr": 22.52, "dd": -35.7, "cal": 0.63, "worst": -18.6, "worstYr": 2011, "neg": 4, "years": 17, "xirr": [20.1, 17.7, 10.5, 1.3]}, {"name": "Midcap150 Momentum 50", "key": "", "cagr": 23.83, "dd": -39.6, "cal": 0.6, "worst": -17.9, "worstYr": 2011, "neg": 4, "years": 17, "xirr": [21.6, 19.1, 12.4, 2.9], "cagr05": 21.31, "dd05": -72.8}, {"name": "Nifty50 Value 20", "key": "", "cagr": 16.21, "dd": -29.8, "cal": 0.54, "worst": -21.3, "worstYr": 2011, "neg": 2, "years": 17, "xirr": [12.7, 11.1, 2.7, -5.4]}, {"name": "SC250 MomQual 100", "key": "", "cagr": 22.24, "dd": -51.5, "cal": 0.43, "worst": -25.2, "worstYr": 2011, "neg": 5, "years": 17, "xirr": [18.9, 16, 10.7, 4.5], "cagr05": 20.39, "dd05": -72.7}, {"name": "Total Market MomQual 50", "key": "", "cagr": 21.28, "dd": -31, "cal": 0.69, "worst": -17.5, "worstYr": 2022, "neg": 5, "years": 17, "xirr": [18.6, 15.6, 10, 1.9], "cagr05": 19.56, "dd05": -59.3}, {"name": "Nifty500 Multicap MomQual 50", "key": "", "cagr": 21.05, "dd": -31.2, "cal": 0.68, "worst": -17.7, "worstYr": 2011, "neg": 5, "years": 17, "xirr": [18, 14.7, 8, -1.2], "cagr05": 19.23, "dd05": -60.3}, {"name": "Nifty500 Low Volatility 50", "key": "", "cagr": 16.44, "dd": -29.1, "cal": 0.57, "worst": -19.4, "worstYr": 2011, "neg": 1, "years": 17, "xirr": [13.8, 13.2, 9.5, 2.2], "cagr05": 16.14, "dd05": -48.5}, {"name": "Nifty100 Low Volatility 30", "key": "", "cagr": 16.26, "dd": -30.7, "cal": 0.53, "worst": -12.3, "worstYr": 2011, "neg": 1, "years": 17, "xirr": [13.1, 11.2, 6.5, -0.2], "cagr05": 15.96, "dd05": -48.8}, {"name": "Nifty 500 (market)", "key": "", "cagr": 14.53, "dd": -38.1, "cal": 0.38, "worst": -26.5, "worstYr": 2011, "neg": 2, "years": 17, "xirr": [12.6, 12.2, 7.7, 1.7], "cagr05": 13.55, "dd05": -63.7}]};
+const CORR={"keys": ["mom50", "v20", "sc250mq", "lv50", "tmmq50", "mcmq50", "lv30"], "short": {"mom50": "Midcap Mom 50", "v20": "Value 20", "sc250mq": "SC250 MomQual", "lv50": "Nifty500 Low Vol 50", "tmmq50": "Total Mkt MomQual 50", "mcmq50": "Multicap MomQual 50", "lv30": "Nifty100 Low Vol 30"}, "size": {"mom50": 50, "v20": 20, "sc250mq": 100, "lv50": 50, "tmmq50": 50, "mcmq50": 50, "lv30": 30}, "vol": {"mom50": 18.8, "v20": 17.2, "sc250mq": 21.9, "lv50": 13.6, "tmmq50": 16.9, "mcmq50": 16.6, "lv30": 13.9}, "corr": {"mom50": {"mom50": 1.0, "v20": 0.72, "sc250mq": 0.89, "lv50": 0.82, "tmmq50": 0.89, "mcmq50": 0.9, "lv30": 0.78}, "v20": {"mom50": 0.72, "v20": 1.0, "sc250mq": 0.72, "lv50": 0.85, "tmmq50": 0.74, "mcmq50": 0.74, "lv30": 0.87}, "sc250mq": {"mom50": 0.89, "v20": 0.72, "sc250mq": 1.0, "lv50": 0.79, "tmmq50": 0.83, "mcmq50": 0.85, "lv30": 0.76}, "lv50": {"mom50": 0.82, "v20": 0.85, "sc250mq": 0.79, "lv50": 1.0, "tmmq50": 0.85, "mcmq50": 0.85, "lv30": 0.96}, "tmmq50": {"mom50": 0.89, "v20": 0.74, "sc250mq": 0.83, "lv50": 0.85, "tmmq50": 1.0, "mcmq50": 0.97, "lv30": 0.81}, "mcmq50": {"mom50": 0.9, "v20": 0.74, "sc250mq": 0.85, "lv50": 0.85, "tmmq50": 0.97, "mcmq50": 1.0, "lv30": 0.81}, "lv30": {"mom50": 0.78, "v20": 0.87, "sc250mq": 0.76, "lv50": 0.96, "tmmq50": 0.81, "mcmq50": 0.81, "lv30": 1.0}}, "crash": {"mom50": {"mom50": 1.0, "v20": 0.38, "sc250mq": 0.85, "lv50": 0.59, "tmmq50": 0.78, "mcmq50": 0.81, "lv30": 0.44}, "v20": {"mom50": 0.38, "v20": 1.0, "sc250mq": 0.31, "lv50": 0.63, "tmmq50": 0.43, "mcmq50": 0.43, "lv30": 0.65}, "sc250mq": {"mom50": 0.85, "v20": 0.31, "sc250mq": 1.0, "lv50": 0.54, "tmmq50": 0.69, "mcmq50": 0.73, "lv30": 0.44}, "lv50": {"mom50": 0.59, "v20": 0.63, "sc250mq": 0.54, "lv50": 1.0, "tmmq50": 0.66, "mcmq50": 0.65, "lv30": 0.9}, "tmmq50": {"mom50": 0.78, "v20": 0.43, "sc250mq": 0.69, "lv50": 0.66, "tmmq50": 1.0, "mcmq50": 0.94, "lv30": 0.56}, "mcmq50": {"mom50": 0.81, "v20": 0.43, "sc250mq": 0.73, "lv50": 0.65, "tmmq50": 0.94, "mcmq50": 1.0, "lv30": 0.57}, "lv30": {"mom50": 0.44, "v20": 0.65, "sc250mq": 0.44, "lv50": 0.9, "tmmq50": 0.56, "mcmq50": 0.57, "lv30": 1.0}}, "pairs": {"mom50|v20": {"c": 0.72, "cd": 0.38, "n": 0, "pct": 0, "stocks": [], "rmin": 0.58, "rmax": 0.86, "rnow": 0.74}, "mom50|sc250mq": {"c": 0.89, "cd": 0.85, "n": 0, "pct": 0, "stocks": [], "rmin": 0.84, "rmax": 0.93, "rnow": 0.89}, "mom50|lv50": {"c": 0.82, "cd": 0.59, "n": 4, "pct": 8, "stocks": ["FEDERALBNK", "LUPIN", "MARICO", "MFSL"], "rmin": 0.76, "rmax": 0.89, "rnow": 0.83}, "mom50|tmmq50": {"c": 0.89, "cd": 0.78, "n": 14, "pct": 28, "stocks": ["AJANTPHARM", "APARINDS", "BSE", "MAHABANK", "GVT&D", "POWERINDIA", "KEI", "MARICO", "MCX", "NMDC", "NATIONALUM", "NAM-INDIA", "OFSS", "POLYCAB"], "rmin": 0.72, "rmax": 0.94, "rnow": 0.94}, "mom50|mcmq50": {"c": 0.9, "cd": 0.81, "n": 13, "pct": 26, "stocks": ["AJANTPHARM", "APARINDS", "BSE", "MAHABANK", "POWERINDIA", "KEI", "MARICO", "MCX", "NMDC", "NATIONALUM", "NAM-INDIA", "OFSS", "POLYCAB"], "rmin": 0.78, "rmax": 0.94, "rnow": 0.94}, "mom50|lv30": {"c": 0.78, "cd": 0.44, "n": 0, "pct": 0, "stocks": [], "rmin": 0.68, "rmax": 0.86, "rnow": 0.75}, "v20|sc250mq": {"c": 0.72, "cd": 0.31, "n": 0, "pct": 0, "stocks": [], "rmin": 0.56, "rmax": 0.83, "rnow": 0.7}, "v20|lv50": {"c": 0.85, "cd": 0.63, "n": 7, "pct": 35, "stocks": ["SBIN", "ONGC", "TCS", "COALINDIA", "DRREDDY", "NTPC", "POWERGRID"], "rmin": 0.78, "rmax": 0.91, "rnow": 0.84}, "v20|tmmq50": {"c": 0.74, "cd": 0.43, "n": 1, "pct": 5, "stocks": ["COALINDIA"], "rmin": 0.5, "rmax": 0.88, "rnow": 0.73}, "v20|mcmq50": {"c": 0.74, "cd": 0.43, "n": 1, "pct": 5, "stocks": ["COALINDIA"], "rmin": 0.51, "rmax": 0.86, "rnow": 0.76}, "v20|lv30": {"c": 0.87, "cd": 0.65, "n": 11, "pct": 55, "stocks": ["HDFCBANK", "RELIANCE", "ICICIBANK", "SBIN", "ITC", "KOTAKBANK", "TCS", "BAJAJFINSV", "DRREDDY", "NTPC", "POWERGRID"], "rmin": 0.75, "rmax": 0.91, "rnow": 0.88}, "sc250mq|lv50": {"c": 0.79, "cd": 0.54, "n": 1, "pct": 2, "stocks": ["CASTROLIND"], "rmin": 0.71, "rmax": 0.85, "rnow": 0.77}, "sc250mq|tmmq50": {"c": 0.83, "cd": 0.69, "n": 14, "pct": 28, "stocks": ["ACUTAAS", "ABSLAMC", "ANANDRATHI", "CAPLIPOINT", "LALPATHLAB", "FORCEMOT", "GABRIEL", "GPIL", "HBLENGINE", "HSCL", "HINDCOPPER", "NATCOPHARM", "SCHNEIDER", "TRITURBINE"], "rmin": 0.57, "rmax": 0.92, "rnow": 0.9}, "sc250mq|mcmq50": {"c": 0.85, "cd": 0.73, "n": 25, "pct": 50, "stocks": ["ACUTAAS", "ABSLAMC", "ANANDRATHI", "CAPLIPOINT", "CAMS", "DATAPATTNS", "LALPATHLAB", "FINCABLES", "FORCEMOT", "GABRIEL", "GRSE", "GPIL", "GESHIP", "GMDCLTD", "HBLENGINE", "HSCL", "HINDCOPPER", "KARURVYSYA", "MSUMI", "NATCOPHARM", "SCHNEIDER", "TRITURBINE", "USHAMART", "VIJAYA", "WELCORP"], "rmin": 0.65, "rmax": 0.9, "rnow": 0.89}, "sc250mq|lv30": {"c": 0.76, "cd": 0.44, "n": 0, "pct": 0, "stocks": [], "rmin": 0.66, "rmax": 0.84, "rnow": 0.68}, "lv50|tmmq50": {"c": 0.85, "cd": 0.66, "n": 5, "pct": 10, "stocks": ["BAJAJ-AUTO", "COALINDIA", "EICHERMOT", "MARICO", "TORNTPHARM"], "rmin": 0.74, "rmax": 0.95, "rnow": 0.8}, "lv50|mcmq50": {"c": 0.85, "cd": 0.65, "n": 4, "pct": 8, "stocks": ["ASIANPAINT", "COALINDIA", "EICHERMOT", "MARICO"], "rmin": 0.71, "rmax": 0.93, "rnow": 0.84}, "lv50|lv30": {"c": 0.96, "cd": 0.9, "n": 19, "pct": 63, "stocks": ["APOLLOHOSP", "ASIANPAINT", "BAJAJ-AUTO", "BHARTIARTL", "BRITANNIA", "CIPLA", "DRREDDY", "HDFCLIFE", "MARUTI", "NTPC", "PIDILITIND", "POWERGRID", "SBIN", "SUNPHARMA", "TCS", "TATAPOWER", "TORNTPHARM", "ULTRACEMCO", "WIPRO"], "rmin": 0.93, "rmax": 0.98, "rnow": 0.95}, "tmmq50|mcmq50": {"c": 0.97, "cd": 0.94, "n": 35, "pct": 70, "stocks": ["ABB", "ACUTAAS", "ABSLAMC", "AJANTPHARM", "ANANDRATHI", "APARINDS", "BSE", "MAHABANK", "BEL", "CGPOWER", "CAPLIPOINT", "COALINDIA", "CUMMINSIND", "LALPATHLAB", "EICHERMOT", "FORCEMOT", "GABRIEL", "GPIL", "HBLENGINE", "HDFCAMC", "HSCL", "HINDCOPPER", "POWERINDIA", "KEI", "MARICO", "MCX", "NATCOPHARM", "NMDC", "NATIONALUM", "NAM-INDIA", "OFSS", "POLYCAB", "SCHNEIDER", "SOLARINDS", "TRITURBINE"], "rmin": 0.93, "rmax": 0.98, "rnow": 0.97}, "tmmq50|lv30": {"c": 0.81, "cd": 0.56, "n": 2, "pct": 7, "stocks": ["BAJAJ-AUTO", "TORNTPHARM"], "rmin": 0.64, "rmax": 0.93, "rnow": 0.74}, "mcmq50|lv30": {"c": 0.81, "cd": 0.57, "n": 1, "pct": 3, "stocks": ["ASIANPAINT"], "rmin": 0.62, "rmax": 0.91, "rnow": 0.78}}, "trios": [{"k": ["mom50", "v20", "sc250mq"], "c": 0.78, "cd": 0.51}, {"k": ["mom50", "v20", "lv50"], "c": 0.8, "cd": 0.53}, {"k": ["mom50", "v20", "tmmq50"], "c": 0.78, "cd": 0.53}, {"k": ["mom50", "v20", "mcmq50"], "c": 0.79, "cd": 0.54}, {"k": ["mom50", "v20", "lv30"], "c": 0.79, "cd": 0.49}, {"k": ["mom50", "sc250mq", "lv50"], "c": 0.84, "cd": 0.66}, {"k": ["mom50", "sc250mq", "tmmq50"], "c": 0.87, "cd": 0.78}, {"k": ["mom50", "sc250mq", "mcmq50"], "c": 0.88, "cd": 0.8}, {"k": ["mom50", "sc250mq", "lv30"], "c": 0.81, "cd": 0.58}, {"k": ["mom50", "lv50", "tmmq50"], "c": 0.85, "cd": 0.68}, {"k": ["mom50", "lv50", "mcmq50"], "c": 0.85, "cd": 0.68}, {"k": ["mom50", "lv50", "lv30"], "c": 0.85, "cd": 0.64}, {"k": ["mom50", "tmmq50", "mcmq50"], "c": 0.92, "cd": 0.85}, {"k": ["mom50", "tmmq50", "lv30"], "c": 0.83, "cd": 0.59}, {"k": ["mom50", "mcmq50", "lv30"], "c": 0.83, "cd": 0.6}, {"k": ["v20", "sc250mq", "lv50"], "c": 0.79, "cd": 0.49}, {"k": ["v20", "sc250mq", "tmmq50"], "c": 0.76, "cd": 0.48}, {"k": ["v20", "sc250mq", "mcmq50"], "c": 0.77, "cd": 0.49}, {"k": ["v20", "sc250mq", "lv30"], "c": 0.78, "cd": 0.47}, {"k": ["v20", "lv50", "tmmq50"], "c": 0.81, "cd": 0.57}, {"k": ["v20", "lv50", "mcmq50"], "c": 0.81, "cd": 0.57}, {"k": ["v20", "lv50", "lv30"], "c": 0.9, "cd": 0.73}, {"k": ["v20", "tmmq50", "mcmq50"], "c": 0.81, "cd": 0.6}, {"k": ["v20", "tmmq50", "lv30"], "c": 0.81, "cd": 0.55}, {"k": ["v20", "mcmq50", "lv30"], "c": 0.81, "cd": 0.55}, {"k": ["sc250mq", "lv50", "tmmq50"], "c": 0.82, "cd": 0.63}, {"k": ["sc250mq", "lv50", "mcmq50"], "c": 0.83, "cd": 0.64}, {"k": ["sc250mq", "lv50", "lv30"], "c": 0.84, "cd": 0.63}, {"k": ["sc250mq", "tmmq50", "mcmq50"], "c": 0.88, "cd": 0.79}, {"k": ["sc250mq", "tmmq50", "lv30"], "c": 0.8, "cd": 0.56}, {"k": ["sc250mq", "mcmq50", "lv30"], "c": 0.81, "cd": 0.58}, {"k": ["lv50", "tmmq50", "mcmq50"], "c": 0.89, "cd": 0.75}, {"k": ["lv50", "tmmq50", "lv30"], "c": 0.87, "cd": 0.7}, {"k": ["lv50", "mcmq50", "lv30"], "c": 0.88, "cd": 0.71}, {"k": ["tmmq50", "mcmq50", "lv30"], "c": 0.86, "cd": 0.69}], "crashWeeks": 136, "strat": {"plan": {"k": ["mom50", "v20", "sc250mq"], "div": 7.1, "all3": [], "uniq": 170, "total": 170}, "A": {"k": ["mom50", "lv50", "tmmq50"], "div": 4.4, "all3": ["MARICO"], "uniq": 128, "total": 150}, "B": {"k": ["mom50", "lv30", "mcmq50"], "div": 4.9, "all3": [], "uniq": 116, "total": 130}}, "idxOf": {"mom": "mom50", "val": null, "sc": "sc250mq", "lv": null, "mq": null}, "updated": "2026-10-14"};
+// long-run CAGR after cost from the daily backtest: [value, since]
+const LONGRUN={"Nifty Midcap150 Momentum 50":[21.31,"2005"],"Nifty50 Value 20":[16.21,"2009"],"Nifty Smallcap250 Momentum Quality 100":[20.39,"2005"],"Nifty Total Market Momentum Quality 50":[19.56,"2005"],"Nifty500 Multicap Momentum Quality 50":[19.23,"2005"],"Nifty500 Low Volatility 50":[16.14,"2005"],"Nifty100 Low Volatility 30":[15.96,"2005"],"Nifty500 Value 50":[15.77,"2005"],"Nifty200 Value 30":[15.32,"2005"],"Nifty MidSmallcap400 Momentum Quality 100":[20.27,"2005"]};
+const KINDS={mom:{label:"Momentum",c:"--mom"},val:{label:"Value",c:"--val"},sc:{label:"Small / mid momentum-quality",c:"--sc"},lv:{label:"Low volatility",c:"--val"},mq:{label:"Momentum-quality, all sizes",c:"--sc"}};
+const STRATS={
+  plan:{name:"Current plan",kinds:["mom","val","sc"],w:[60,30,10],def:["tata_mom50","icici_v20","mirae_sc250"],presets:[[60,30,10],[70,30,0],[80,20,0],[50,35,15]],note:"Midcap Momentum + Nifty50 Value 20 + Smallcap MomQual. Tested since 2009."},
+  A:{name:"Option A",kinds:["mom","lv","mq"],w:[40,20,40],def:["kotak_mom50","nippon_lv50","angel_tmmq50"],presets:[[40,20,40],[30,30,40],[20,30,50]],note:"Midcap Momentum + Nifty500 Low Volatility 50 + Total Market Momentum Quality 50. Best tested mix; the low-vol and momentum-quality funds are small and new."},
+  B:{name:"Option B",kinds:["mom","lv","mq"],w:[40,20,40],def:["kotak_mom50","kotak_lv30","edel_mcmq50"],presets:[[40,20,40],[30,30,40],[20,30,50]],note:"Same idea as A using larger, older funds: Nifty100 Low Volatility 30 and Nifty500 Multicap Momentum Quality 50."}
+};
+const EXAMPLE=[148000,61000,22500];
+const S={strat:'plan',sip:10000,w:[60,30,10],hold:EXAMPLE.slice(),yrs:15,ret:13,step:5,pick:STRATS.plan.def.slice(),sort:'score',only:false,xStart:'2025-02',xDay:5,xAmt:null,units:[0,0,0]};
+try{const s=JSON.parse(localStorage.getItem('godmf4')||'null');if(s)Object.assign(S,s);}catch(e){}
+S.strat='plan';
+let SLOTS=[];
+function setSlots(){SLOTS=STRATS[S.strat].kinds.map(k=>({...KINDS[k],kind:k}));S.pick=S.pick.map((p,i)=>(LIVE.funds[p]&&LIVE.funds[p].slot===SLOTS[i].kind)?p:STRATS[S.strat].def[i])}
+setSlots();
+function save(){try{localStorage.setItem('godmf4',JSON.stringify(S))}catch(e){}}
+function renderStratChips(){
+  SLOTS.forEach((s,i)=>$('wl'+i).textContent=s.label);
+}
+const $=id=>document.getElementById(id);
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const pct=(n,d=2)=>n==null?'—':(n<0?'−':'')+Math.abs(n).toFixed(d)+'%';
+const sgn=n=>n==null?'':(n<0?'neg':'pos');
+function short(n){const a=Math.abs(n);if(a>=1e7)return '₹'+(n/1e7).toFixed(2)+' Cr';if(a>=1e5)return '₹'+(n/1e5).toFixed(1)+' L';return inr(n)}
+const col=v=>`var(${v})`;
+const fmtDate=d=>{try{return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}catch(e){return d}};
+const leagueBy=n=>LEAGUE.find(r=>r.name===n);
+
+$('updLabel').textContent='Data updated '+fmtDate(LIVE.updated);
+
+function renderPresets(){
+  const P=STRATS[S.strat].presets;
+  $('presets').innerHTML=P.map((p,i)=>`<button type="button" class="chip" data-i="${i}" aria-pressed="${p.join()===S.w.join()}">${p.join(' / ')}</button>`).join('')+
+   `<button type="button" class="chip" data-i="c" aria-pressed="${!P.some(p=>p.join()===S.w.join())}">Custom</button>`;
+}
+$('presets').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;if(b.dataset.i!=='c'){S.w=STRATS[S.strat].presets[+b.dataset.i].slice();syncW();}render();});
+function syncW(){[0,1,2].forEach(i=>$('w'+i).value=S.w[i])}
+[0,1,2].forEach(i=>$('w'+i).addEventListener('input',e=>{S.w[i]=Math.max(0,+e.target.value||0);render()}));
+$('sip').addEventListener('input',e=>{S.sip=Math.max(0,+e.target.value||0);render()});
+['yrs','ret','step'].forEach(k=>$(k).addEventListener('input',e=>{S[k]=+e.target.value;render()}));
+$('resetHold').addEventListener('click',()=>{S.hold=EXAMPLE.slice();render(true)});
+
+function cheapestIn(slot){
+  const ids=Object.keys(LIVE.funds).filter(k=>LIVE.funds[k].slot===SLOTS[slot].kind);
+  const byIdx={};ids.forEach(k=>{const f=LIVE.funds[k];if(!byIdx[f.idx]||f.cost<LIVE.funds[byIdx[f.idx]].cost)byIdx[f.idx]=k});
+  return new Set(Object.values(byIdx));
+}
+function renderSlots(w){
+  $('slots').innerHTML=SLOTS.map((s,i)=>{
+    const id=S.pick[i],f=LIVE.funds[id],a=Math.round(S.sip*w[i]/10)*10;
+    const opts=Object.keys(LIVE.funds).filter(k=>LIVE.funds[k].slot===s.kind).map(k=>`<option value="${k}" ${k===id?'selected':''}>${LIVE.funds[k].name}</option>`).join('');
+    const lg=leagueBy(f.idx), lr=LONGRUN[f.idx];
+    const cheap=cheapestIn(i).has(id);
+    return `<div class="slot"><span class="sw" style="background:${col(s.c)}"></span><div class="body">
+      <div class="top"><span class="lbl">${s.label} · ${Math.round(w[i]*100)}%</span><span class="amt">${inr(a)}<small>/ month</small></span></div>
+      <label class="field" for="pick${i}" style="text-transform:none;letter-spacing:0"><select id="pick${i}" data-slot="${i}">${opts}</select></label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px;color:var(--muted)">${f.amc} · tracks ${f.idx} ${cheap?'<span class="badge">Lowest cost on this index</span>':'<span class="badge dim">Cheaper option exists</span>'}</div>
+      <div class="kv">
+        <div><small>NAV</small><b>₹${f.nav.toFixed(2)}</b><small>${fmtDate(f.navDate)}</small></div>
+        <div><small>Fund 1Y</small><b class="${sgn(f.r1)}">${f.r1==null?'—':pct(f.r1)}</b><small>${f.r1==null?'too new':'after cost'}</small></div>
+        <div><small>Cost / yr</small><b>${f.cost.toFixed(2)}%</b><small>all-in</small></div>
+        <div><small>Fund size</small><b>₹${f.aum.toLocaleString('en-IN')} Cr</b><small>${f.aum<100?'small':'AUM'}</small></div>
+        <div><small>Index 5Y net</small><b>${lg?pct(lg.r5-f.cost):'—'}</b><small>${lr?'long-run '+pct(lr[0],1)+' since '+lr[1]:'5Y CAGR − cost'}</small></div>
+      </div></div></div>`}).join('');
+  SLOTS.forEach((s,i)=>$('pick'+i).addEventListener('change',e=>{S.pick[i]=e.target.value;render()}));
+}
+
+function render(rebuild){
+  const sum=S.w.reduce((a,b)=>a+b,0), ok=sum===100;
+  $('sumWarn').hidden=ok; $('sumWarn').textContent=`Weights add up to ${sum}%. Make them total 100%.`;
+  const w=ok?S.w.map(x=>x/100):S.w.map(x=>sum?x/sum:0);
+  $('ratioTitle').textContent=S.w.join(' · ');
+  $('topBar').innerHTML=SLOTS.map((s,i)=>w[i]>0?`<span style="flex:${w[i]};background:${col(s.c)}"></span>`:'').join('');
+  renderPresets(); renderSlots(w);
+  // header facts: daily backtest of the strategy's default mix; cost uses chosen funds and weights
+  renderStratChips();
+  const cost=S.pick.reduce((a,p,i)=>a+w[i]*LIVE.funds[p].cost,0);
+  const base=STRAT.rows.find(r=>r.key===S.strat);
+  const isDef=S.w.join()===STRATS[S.strat].w.join();
+  $('fNet').textContent=pct(base.cagr,1); $('fDD').textContent=pct(base.dd,1); $('fCal').textContent=base.cal.toFixed(2); $('fCost').textContent=cost.toFixed(2)+'%';
+  $('fNetSub').textContent=isDef?'daily backtest 2009 – Oct 2026':`backtest at ${STRATS[S.strat].w.join('/')}, not your custom mix`;
+  // rebalance
+  const T=S.hold.reduce((a,b)=>a+b,0), T2=T+S.sip;
+  const d=SLOTS.map((s,i)=>w[i]*T2-S.hold[i]);
+  const P=d.reduce((a,x)=>a+Math.max(0,x),0);
+  const next=d.map(x=>P>0?S.sip*Math.max(0,x)/P:0);
+  if(rebuild||!$('rebBody').children.length){
+    $('rebBody').innerHTML=SLOTS.map((s,i)=>`<tr><td><span class="dot" style="background:${col(s.c)}"></span>${s.label}</td><td><input type="number" id="h${i}" min="0" step="1000" value="${S.hold[i]}" aria-label="${s.label} current value"></td><td id="cw${i}"></td><td id="tw${i}"></td><td id="dr${i}"></td><td id="ns${i}"></td><td id="fr${i}"></td></tr>`).join('');
+    SLOTS.forEach((s,i)=>$('h'+i).addEventListener('input',e=>{S.hold[i]=Math.max(0,+e.target.value||0);render()}));
+  }
+  let maxDrift=0;
+  SLOTS.forEach((s,i)=>{
+    const cw=T?S.hold[i]/T:0, dr=(cw-w[i])*100; maxDrift=Math.max(maxDrift,Math.abs(dr));
+    const cls=Math.abs(dr)<2?'ok':Math.abs(dr)<5?'mid':'hi';
+    $('cw'+i).textContent=(cw*100).toFixed(1)+'%';
+    $('tw'+i).textContent=(w[i]*100).toFixed(0)+'%';
+    $('dr'+i).innerHTML=`<span class="pill ${cls}">${dr>=0?'+':'−'}${Math.abs(dr).toFixed(1)} pts</span>`;
+    $('ns'+i).textContent=inr(Math.round(next[i]/10)*10);
+    const tr=w[i]*T-S.hold[i];
+    $('fr'+i).innerHTML=`<span class="${tr>=0?'pos':'neg'}">${tr>=0?'Buy ':'Sell '}${inr(Math.abs(tr))}</span>`;
+  });
+  $('rebCallout').innerHTML= !T?'Enter your holdings to see drift.':
+    maxDrift<2?`Largest drift is <b>${maxDrift.toFixed(1)} pts</b>. You're on target, so keep the normal SIP split.`:
+    maxDrift<5?`Largest drift is <b>${maxDrift.toFixed(1)} pts</b>. Still fine. Using the next SIP split for a month or two will tidy it up.`:
+    `Largest drift is <b>${maxDrift.toFixed(1)} pts</b>. Point new SIP money using the "Next SIP split" column until drift is under 5 pts. Sell only if new money alone would take too long, since selling can trigger capital gains tax.`;
+  renderMine(w);
+  // projection
+  $('yrsV').textContent=S.yrs+' yrs'; $('retV').textContent=S.ret+'%'; $('stepV').textContent=S.step+'%';
+  $('yrs').value=S.yrs;$('ret').value=S.ret;$('step').value=S.step;
+  const rm=Math.pow(1+S.ret/100,1/12)-1; let v=0,inv=0,amt=S.sip; const pts=[{y:0,v:0,i:0}];
+  for(let m=1;m<=S.yrs*12;m++){v=(v+amt)*(1+rm);inv+=amt;if(m%12===0){pts.push({y:m/12,v,i:inv});amt*=1+S.step/100;}}
+  $('oInv').textContent=short(inv);$('oVal').textContent=short(v);$('oMul').textContent=inv?(v/inv).toFixed(2)+'×':'—';
+  drawChart(pts);
+  save();
+}
+
+function xirr(cfs){
+  if(cfs.length<2)return null;
+  const t0=cfs[0][0], f=r=>cfs.reduce((a,[d,v])=>a+v/Math.pow(1+r,(d-t0)/31557600000),0);
+  let lo=-0.99,hi=5; if(f(lo)*f(hi)>0)return null;
+  for(let i=0;i<200;i++){const m=(lo+hi)/2;if(f(m)>0)lo=m;else hi=m}
+  return (lo+hi)/2;
+}
+function renderMine(w){
+  if(!S.xAmt)S.xAmt=w.map(x=>Math.round(S.sip*x/10)*10);
+  $('xStart').value=S.xStart; $('xDay').value=S.xDay;
+  if(!$('myBody').children.length){
+    $('myBody').innerHTML=SLOTS.map((s,i)=>`<tr><td><span class="dot" style="background:${col(s.c)}"></span>${s.label}<small id="mf${i}"></small></td><td><input type="number" id="xa${i}" min="0" step="500" aria-label="${s.label} monthly SIP"></td><td><input type="number" id="xu${i}" min="0" step="0.001" aria-label="${s.label} units held"></td><td id="xi${i}"></td><td id="xv${i}"></td><td id="xg${i}"></td><td id="xr${i}"></td></tr>`).join('')+
+      `<tr class="port"><td>Total</td><td id="xaT"></td><td></td><td id="xiT"></td><td id="xvT"></td><td id="xgT"></td><td id="xrT"></td></tr>`;
+    SLOTS.forEach((s,i)=>{
+      $('xa'+i).value=S.xAmt[i]; $('xu'+i).value=S.units[i]||'';
+      $('xa'+i).addEventListener('input',e=>{S.xAmt[i]=Math.max(0,+e.target.value||0);render()});
+      $('xu'+i).addEventListener('input',e=>{S.units[i]=Math.max(0,+e.target.value||0);render()});
+    });
+  }
+  const [y0,m0]=(S.xStart||'2024-01').split('-').map(Number), day=Math.min(28,Math.max(1,S.xDay||5)), now=new Date();
+  const dates=[]; for(let y=y0,m=m0;;m++){if(m>12){m=1;y++}const d=new Date(y,m-1,day);if(d>now||dates.length>600)break;dates.push(d)}
+  const all=[]; let I=0,V=0;
+  SLOTS.forEach((s,i)=>{
+    const f=LIVE.funds[S.pick[i]], a=S.xAmt[i]||0;
+    $('mf'+i).textContent=f.name+(S.units[i]?` · NAV ₹${f.nav.toFixed(2)}`:'');
+    const val=S.units[i]>0?S.units[i]*f.nav:S.hold[i], inv=a*dates.length;
+    const cfs=dates.map(d=>[d.getTime(),-a]); cfs.push([now.getTime(),val]);
+    const r=a>0&&dates.length?xirr(cfs):null;
+    $('xi'+i).textContent=inr(inv); $('xv'+i).textContent=inr(val);
+    $('xg'+i).innerHTML=`<span class="${val-inv>=0?'pos':'neg'}">${val-inv>=0?'+':'−'}${inr(Math.abs(val-inv))}</span>`;
+    $('xr'+i).innerHTML=r==null?'—':`<b class="${r>=0?'pos':'neg'}">${pct(r*100,1)}</b>`;
+    I+=inv;V+=val; dates.forEach((d,k)=>{all[k]=(all[k]||0)-a});
+  });
+  const cfsT=dates.map((d,k)=>[d.getTime(),all[k]]); cfsT.push([now.getTime(),V]);
+  const rT=I>0?xirr(cfsT):null;
+  $('xaT').textContent=inr(S.xAmt.reduce((a,b)=>a+(b||0),0)); $('xiT').textContent=inr(I); $('xvT').textContent=inr(V);
+  $('xgT').innerHTML=`<span class="${V-I>=0?'pos':'neg'}">${V-I>=0?'+':'−'}${inr(Math.abs(V-I))}</span>`;
+  $('xrT').innerHTML=rT==null?'—':`<b class="${rT>=0?'pos':'neg'}">${pct(rT*100,1)}</b>`;
+  $('myCallout').innerHTML=`${dates.length} instalments since ${dates[0]?dates[0].toLocaleDateString('en-IN',{month:'short',year:'numeric'}):'—'}. `+
+    (rT==null?'Enter your SIP details to see XIRR.':dates.length<12?`Your XIRR is <b>${pct(rT*100,1)}</b>, but under a year of SIPs swings a lot with each month's market move.`:`Your portfolio XIRR is <b>${pct(rT*100,1)}</b> a year, after fund costs. The 17-year backtest of this strategy earned ${pct(STRAT.rows.find(r=>r.key===S.strat).xirr[0],1)}.`)+
+    ' This assumes the same amount every month; if you changed amounts or skipped months, the figure is approximate.';
+}
+$('xStart').addEventListener('change',e=>{S.xStart=e.target.value||'2024-01';render()});
+$('xDay').addEventListener('input',e=>{S.xDay=+e.target.value||5;render()});
+function renderBX(){
+  $('bxEnd').textContent=fmtDate(STRAT.end);
+  $('bxHead').innerHTML=`<tr><th>Strategy or index</th>${['Since 2009','Last 10 yrs','Last 5 yrs','Last 3 yrs'].map(w=>`<th>${w}</th>`).join('')}</tr>`;
+  $('bxBody').innerHTML=STRAT.rows.filter(r=>['plan'].includes(r.key)||/Nifty 500 \(market\)|^Midcap150|^Nifty50 Value 20$|^SC250/.test(r.name)).map(r=>`<tr class="${r.key===S.strat?'hl':''} ${r.key?'port':''}"><td>${r.name}${r.key===S.strat?' <span class="badge">your plan</span>':''}</td>${r.xirr.map(v=>`<td><b class="${v<0?'neg':''}">${pct(v,1)}</b></td>`).join('')}</tr>`).join('');
+}
+function heatBg(v){const t=Math.max(0,Math.min(1,(v-0.3)/0.7));return `color-mix(in srgb, var(--bad) ${Math.round(t*55)}%, var(--surface))`}
+function pairOf(a,b){return CORR.pairs[a+'|'+b]||CORR.pairs[b+'|'+a]}
+function renderCorr(){
+  const m=S.cmode||'c', st=CORR.strat[S.strat], k=st.k, nm=x=>CORR.short[x];
+  $('coN').textContent=CORR.crashWeeks; if(CORR.updated)$('coUpd').textContent=fmtDate(CORR.updated);
+  $('coMode').innerHTML=[['c','Normal weeks'],['cd','Crash weeks']].map(([v,l])=>`<button type="button" class="chip" data-m="${v}" aria-pressed="${m===v}">${l}</button>`).join('');
+  const prs=[[k[0],k[1]],[k[1],k[2]],[k[2],k[0]]].map(([a,b])=>({a,b,...pairOf(a,b)}));
+  const avg=x=>(prs.reduce((s,p)=>s+p[x],0)/3).toFixed(2);
+  $('coFacts').innerHTML=`<div class="fact"><span class="lbl">Avg correlation</span><b class="num">${avg('c')}</b><small>all weeks</small></div>
+   <div class="fact"><span class="lbl">In crash weeks</span><b class="num">${avg('cd')}</b><small>market down 2%+</small></div>
+   <div class="fact"><span class="lbl">Stocks in all 3</span><b class="num">${st.all3.length}</b><small>${st.uniq} unique of ${st.total}${st.all3.length?' · '+st.all3.join(', '):''}</small></div>
+   <div class="fact"><span class="lbl">Diversification</span><b class="num">${st.div}%</b><small>volatility saved by mixing</small></div>`;
+  $('coPairs').innerHTML=prs.map(p=>{const v=p[m];return `<div class="pair"><span class="nm">${nm(p.a)} ↔ ${nm(p.b)}</span>
+    <span class="big">${v.toFixed(2)}</span><div class="meter"><span style="width:${Math.max(4,v*100)}%;background:${heatBg(v+0.25)}"></span></div>
+    <small>${m==='c'?`Crash weeks ${p.cd.toFixed(2)}`:`All weeks ${p.c.toFixed(2)}`} · 3-yr range ${p.rmin.toFixed(2)}–${p.rmax.toFixed(2)}, now ${p.rnow.toFixed(2)}</small>
+    <small><b style="color:var(--ink)">${p.n} shared stock${p.n===1?'':'s'}</b> (${p.pct}% of the smaller index)</small>
+    ${p.n?`<details><summary>Show shared stocks</summary><div class="stk">${p.stocks.map(s=>`<span>${s}</span>`).join('')}</div></details>`:''}</div>`}).join('');
+  return;
+  const K=CORR.keys, mine=new Set(k);
+  $('coHeat').innerHTML=`<thead><tr><th></th>${K.map(x=>`<th class="${mine.has(x)?'mine':''}" title="${nm(x)}">${nm(x)}</th>`).join('')}</tr></thead><tbody>`+
+    K.map((a,i)=>`<tr><td class="${mine.has(a)?'mine':''}">${nm(a)}<small>${CORR.size[a]} stocks · vol ${CORR.vol[a]}%</small></td>${K.map((b,j)=>{if(i===j)return '<td class="self">—</td>';const p=pairOf(a,b);const hl=mine.has(a)&&mine.has(b)?' mine':'';
+      if(j>i){const v=(m==='c'?CORR.corr:CORR.crash)[a][b];return `<td class="num${hl}" style="background:${heatBg(v)}">${v.toFixed(2)}</td>`}
+      return `<td class="ov${hl}">${p.n}</td>`}).join('')}</tr>`).join('')+'</tbody>';
+  const T=CORR.trios.slice().sort((x,y)=>x[m]-y[m]);
+  const key=k.slice().sort().join();
+  $('coTrios').innerHTML=`<thead><tr><th>Trio</th><th>Avg correlation</th><th>In crash weeks</th></tr></thead><tbody>`+T.map((t,i)=>{const me=t.k.slice().sort().join()===key;return `<tr class="${me?'hl':''}"><td>${i+1}. ${t.k.map(nm).join(' + ')}${me?' <span class="badge">your strategy</span>':''}</td><td>${t.c.toFixed(2)}</td><td>${t.cd.toFixed(2)}</td></tr>`}).join('')+'</tbody>';
+}
+$('coMode').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;S.cmode=b.dataset.m;renderCorr();save()});
+function renderStrat(){
+  const best=Math.max(...STRAT.rows.filter(r=>r.key).map(r=>r.cal));
+  $('calBody').innerHTML=STRAT.rows.map(r=>`<tr class="${r.key===S.strat?'hl':''} ${r.key?'port':''}"><td>${r.name}${r.key===S.strat?' <span class="badge">selected</span>':''}${r.key&&r.cal===best?'<small>Best Calmar of the three strategies</small>':''}</td><td>${pct(r.cagr,1)}</td><td class="neg">${pct(r.dd,1)}</td><td><b>${r.cal.toFixed(2)}</b></td><td>${pct(r.worst,1)}<small>${r.worstYr}</small></td><td>${r.cagr05!=null?pct(r.cagr05,1):'—'}</td><td class="neg">${r.dd05!=null?pct(r.dd05,1):'—'}</td></tr>`).join('');
+}
+const SORTS=[['score','Return per risk'],['r5','5Y'],['r3','3Y'],['r1','1Y'],['vol','Lowest volatility']];
+function renderLeague(){
+  $('sortChips').innerHTML=SORTS.map(([k,l])=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${S.sort===k}">${l}</button>`).join('');
+  $('onlyFund').checked=S.only;
+  let rows=LEAGUE.slice(); if(S.only)rows=rows.filter(r=>r.fund);
+  rows.sort((a,b)=>S.sort==='vol'?a.vol-b.vol:b[S.sort]-a[S.sort]);
+  const mine=new Set(S.pick.map(p=>LIVE.funds[p].idx));
+  $('lgBody').innerHTML=rows.map((r,i)=>`<tr class="${mine.has(r.name)?'hl':''}"><td>${i+1}. ${r.name}${mine.has(r.name)?' <span class="badge">in your plan</span>':''}<small>${r.fund?`${r.fund} · ${r.cost.toFixed(2)}% · ₹${r.aum.toLocaleString('en-IN')} Cr${r.note?' · '+r.note:''}`:(r.note||'No index fund checked')}</small></td><td class="${sgn(r.r1)}">${pct(r.r1)}</td><td>${pct(r.r3)}</td><td>${pct(r.r5)}</td><td>${r.r5net!=null?'<b>'+pct(r.r5net)+'</b>':'—'}</td><td>${pct(r.vol)}</td><td><b>${r.score.toFixed(2)}</b></td></tr>`).join('');
+  save();
+}
+
+function niceMax(x){if(x<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(x)));for(const m of[1,2,2.5,5,10])if(m*p>=x)return m*p}
+function drawChart(pts){
+  const W=520,H=260,L=58,R=14,Tp=12,B=28,iw=W-L-R,ih=H-Tp-B;
+  const ymax=niceMax(Math.max(...pts.map(p=>p.v),1)), xmax=pts[pts.length-1].y||1;
+  const X=y=>L+iw*y/xmax, Y=v=>Tp+ih*(1-v/ymax);
+  let g='';
+  for(let k=0;k<=4;k++){const val=ymax*k/4,yy=Y(val);g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${L-8}" y="${yy+3.5}" text-anchor="end">${val?short(val):'0'}</text>`}
+  const step=xmax>20?5:xmax>10?2:1;
+  for(let y=0;y<=xmax;y+=step)g+=`<text x="${X(y)}" y="${H-8}" text-anchor="middle">${y}y</text>`;
+  const line=k=>pts.map((p,i)=>(i?'L':'M')+X(p.y).toFixed(1)+','+Y(p[k]).toFixed(1)).join('');
+  const area=line('v')+`L${X(xmax)},${Y(0)}L${X(0)},${Y(0)}Z`;
+  const last=pts[pts.length-1];
+  g+=`<path d="${area}" fill="var(--accent)" fill-opacity=".14"/><path d="${line('v')}" fill="none" stroke="var(--accent)" stroke-width="2.2"/>`;
+  g+=`<path d="${line('i')}" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="4 4"/>`;
+  g+=`<circle cx="${X(last.y)}" cy="${Y(last.v)}" r="4" fill="var(--accent)"/>`;
+  g+=`<text x="${L+6}" y="${Tp+12}" style="fill:var(--accent)">— Value</text><text x="${L+70}" y="${Tp+12}">- - Invested</text>`;
+  $('chart').innerHTML=g;
+}
+$('sip').value=S.sip; syncW(); render(true); renderBX(); renderCorr();
+</script>
+
+</body></html>
